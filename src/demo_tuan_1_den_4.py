@@ -127,7 +127,7 @@ def main():
                  print(f"[TEST 3.2] KẾT QUẢ: LỖI LOGIC THƯ VIỆN. (Trả về giá trị không mong muốn)")
         except KeyError as ke:
              # Nếu gặp KeyError ở đây, cũng coi như giải mã thất bại
-            print(f"[TEST 3.2] KẾT QUẢ: GIẢI MÃ THẤT BẠI (Do lỗi thư viện {ke}, nhưng đúng là không giải mã được)")
+            print(f"[TEST 3.2] KẾT QUẢ: GIẢI MÃ THẤT BẠI (Do lỗi thư viện {ke}, không giải mã được)")
         except Exception as e:
             print(f"[TEST 3.2] KẾT QUẢ: GẶP LỖI KHÁC KHI GIẢI MÃ. ({e})")
 
@@ -200,7 +200,7 @@ def main():
             else:
                  print(f"[TEST 4.3] KẾT QUẢ: LỖI LOGIC THƯ VIỆN.")
         except KeyError as ke:
-            print(f"[TEST 4.3] KẾT QUẢ: GIẢI MÃ THẤT BẠI (Do lỗi thư viện {ke}, nhưng đúng là không giải mã được)")
+            print(f"[TEST 4.3] KẾT QUẢ: GIẢI MÃ THẤT BẠI (Do lỗi thư viện {ke}, không giải mã được)")
         except Exception as e:
              print(f"[TEST 4.3] KẾT QUẢ: GẶP LỖI KHÁC KHI GIẢI MÃ. ({e})")
 
@@ -221,7 +221,6 @@ def main():
         except Exception as e:
             print(f"[HIỆU NĂNG] Lỗi khi đo thời gian mã hóa: {e}")
 
-        # 4b. Đo thời gian giải mã (Decrypt) - Dùng kịch bản LẼ RA thành công
         try:
             # Tạo sẵn bản mã hợp lệ để đo thời gian decrypt
             valid_ciphertext_for_timing = cpabe.encrypt(pk, message, policy_complex_and)
