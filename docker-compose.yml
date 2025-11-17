@@ -1,0 +1,32 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+      - "5679:5679"
+    environment:
+      FLASK_APP: run.py
+      FLASK_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      WORKERS: ${WORKERS:-4}
+      THREADS: ${THREADS:-10}
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    init: true
+    depends_on:
+      # redis:
+      #   condition: service_healthy
+      - redis
+    # entrypoint: ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "--threads", "10", "run:app"]
+    # entrypoint: ["gunicorn", "--bind", "0.0.0.0:8080", "run:app"]
+    entrypoint: ["/app/entrypoint.sh"]
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"

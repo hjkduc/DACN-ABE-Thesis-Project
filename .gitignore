@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+
+# Docker
+docker-compose.override.yml
+
+# IDE / OS
+.vscode/
+.DS_Store
+
+# Tệp kết quả (từ ảnh chụp màn hình của bạn)
+profile_results.prof
+*.prof
+
+# Tệp sổ tay (từ ảnh chụp màn hình của bạn)
+.ipynb_checkpoints/
