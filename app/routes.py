@@ -148,27 +148,31 @@ class Keygen(Resource):
             return jsonify({'error': 'Invalid input data'}), 400
 
         authority_name = data.get('authority_name')
-        attributes = data.get('attributes')  # List of attributes to add
+        attributes = data.get('attributes')
         user_id = data.get('user_id')
 
         if not authority_name or not attributes or not user_id:
             return jsonify({'error': 'Missing required parameters'}), 400
 
         try:
-            # Lấy khóa bí mật của cơ quan và khóa (nếu có) của người dùng
             secret_key_bytes = key_manager.retrieve_key(f'{authority_name}_secret_key')
             if not secret_key_bytes:
                 return jsonify({'error': f"Authority secret key for '{authority_name}' not found"}), 404
             secret_keys = bytesToObject(secret_key_bytes, group)
 
-            existing_key_bytes = key_manager.retrieve_key(f'{user_id}_key')
-            existing_key = bytesToObject(existing_key_bytes, group) if existing_key_bytes else {}
-        except Exception as e:
-            print(f"Creating a new key for user: {user_id}")
-            # Nếu_lỗi, đảm bảo existing_key là dict để tiếp tục
-            existing_key = existing_key if isinstance(existing_key, dict) else {}
+            existing_key = {}
+            
+            try:
+                existing_key_bytes = key_manager.retrieve_key(f'{user_id}_key')
+                if existing_key_bytes:
+                    existing_key = bytesToObject(existing_key_bytes, group)
+            except KeyError:
+                print(f"Creating a new key for user: {user_id}")
+                existing_key = {}
+            
+            if not isinstance(existing_key, dict):
+                existing_key = {}
         
-        try:
             for attribute in attributes:
                 user_key = maabe.keygen(global_params, secret_keys, user_id, attribute.upper())
 
@@ -208,15 +212,17 @@ class Encrypt(Resource):
 
             gt = group.random(GT, seed=1)
 
-            if gt == group.init(GT, 1):  # Identity element of GT
+            if gt == group.init(GT, 1):
                 raise ValueError("Computed GT is invalid (identity element).")
 
+            # --- LOGIC MA-ABE ĐÚNG (KHÔNG DÙNG BẢN SỬA BỊ LỖI) ---
             public_keys = {}
             authority_names = list(set(re.findall(r'@(\w+)', policy)))
             
             for authority_name in authority_names:
                 public_key = key_manager.retrieve_key(f'{authority_name}_public_key')
                 public_keys[authority_name] = bytesToObject(public_key, group)
+            # --- KẾT THÚC LOGIC ĐÚNG ---
 
             encrypted_key = maabe.encrypt(global_params, public_keys, gt, policy)
             serialized_encrypted_key = objectToBytes(encrypted_key, group)
@@ -224,18 +230,28 @@ class Encrypt(Resource):
             symmetric_key = gt
             print("GT Before Encryption:", objectToBytes(gt, group))
 
-            # Đảm bảo payload là bytes
             payload_bytes = payload.encode() if isinstance(payload, str) else payload
 
             symcrypt = SymmetricCryptoAbstraction(extractor(symmetric_key))
-            encrypted_result = symcrypt.encrypt(payload_bytes)
+            encrypted_result = symcrypt.encrypt(payload_bytes) # Đây là 'str'
 
-            encrypted_result_hex = encrypted_result.hex()
+            # --- SỬA LỖI V17 (AttributeError: 'str' object has no attribute 'hex') ---
+            # Chuyển đổi 'str' trả về từ encrypt() sang 'bytes'
+            if isinstance(encrypted_result, str):
+                encrypted_result_bytes = encrypted_result.encode()
+            else:
+                encrypted_result_bytes = encrypted_result
+            
+            encrypted_result_hex = encrypted_result_bytes.hex()
+            # --- KẾT THÚC SỬA LỖI V17 ---
+
             result = f"{encrypted_result_hex}:{serialized_encrypted_key.hex()}"
             return jsonify({'result': result})
         except Exception as e:
             print("Encryption Error:", str(e))
-            return jsonify({'error': "Encryption failed"}), 500
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': f"Encryption failed: {str(e)}"}), 500
 
 
 decrypt_model = api.model('Decrypt', {
@@ -303,7 +319,7 @@ class EncryptFile(Resource):
             payload_file: FileStorage = args['payload']
             payload_bytes: bytes = payload_file.read()
 
-            gt = group.random(GT, seed=1)
+            gt = group.random(GT, seed=1) 
             
             public_keys = {}
             authority_names = list(set(re.findall(r'@(\w+)', policy)))
