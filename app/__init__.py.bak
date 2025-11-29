@@ -1,0 +1,14 @@
+from flask import Flask
+from flask_restx import Api
+import os
+
+def create_app():
+    app = Flask(__name__)
+    
+    # Initialize Flask-RESTX
+    api = Api(app, doc='/doc')
+    
+    # Import routes AFTER app creation
+    from app import routes
+    
+    return app
